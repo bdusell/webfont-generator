@@ -11,13 +11,33 @@ a font file as its argument and spits out all of the converted fonts and a CSS
 stylesheet containing the appropriate `@font-face` rule to the directory
 specified by `-o`.
 
-    ./generate-webfonts foo.ttf -o fonts/
+    ./generate-webfonts -o fonts/ foo.ttf
+
+The command above generates the following files:
+* `fonts/foo.css`
+* `fonts/foo.woff`
+* `fonts/foo.ttf`
+* `fonts/foo.eot`
+* `fonts/foo.svg`
+
+Options
+-------
+
+* `-h` `--help`: Show a help message.
+* `-o` `--output`: Output directory where converted files will go.
+* `-p` `--prefix`: Prefix of font paths used in the generated CSS. Default is
+  "../assets/".
+* `-f` `--family`: Font family name used in the generated CSS. Default is the
+  base name of the input file.
+* `-c` `--css`: Alternate destination path for the generated CSS file.
 
 Supported Formats
 -----------------
 
 `generate-webfonts` reads all formats readable by FontForge, which include ttf,
 otf, svg, and woff. It cannot read eot.
+
+The generated font formats are woff, ttf, eot, and svg.
 
 Dependencies
 ------------
