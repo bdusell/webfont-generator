@@ -56,7 +56,7 @@ Options:
 -h --help     Show this help message.
 -o --output   Output directory where converted files will go.
 -p --prefix   Prefix of font paths used in the generated CSS. Default is
-              "../assets/".
+              the output directory.
 -f --family   Font family name used in the generated CSS. Default is the base
               name of the input file.
 -c --css      Alternate destination path for the generated CSS file.
@@ -66,7 +66,7 @@ def main():
     args = sys.argv[:0:-1]
     input_filename = None
     output_dirname = None
-    css_prefix = '../assets/'
+    css_prefix = None
     css_font_family = None
     css_path = None
     while args:
@@ -117,6 +117,8 @@ def main():
         css_path = output_path('css')
     if css_font_family is None:
         css_font_family = input_base
+    if css_prefix is None:
+        css_prefix = os.path.join(output_dirname, '')
     generate_css(
         css_path,
         basename=input_base,

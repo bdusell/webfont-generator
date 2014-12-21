@@ -6,30 +6,30 @@ One font goes in, all web fonts come out.
 Usage
 -----
 
-The driver script is `generate-webfonts`. In the simplest use case, it accepts
-a font file as its argument and spits out all of the converted fonts and a CSS
+The driver script is `generate-webfonts`. At its most basic, it accepts a font
+file as its argument and spits out all of the converted fonts and a CSS
 stylesheet containing the appropriate `@font-face` rule to the directory
 specified by `-o`.
 
-    ./generate-webfonts -o fonts/ foo.ttf
+    ./generate-webfonts -o assets foo.ttf
 
 The command above generates the following files:
-* `fonts/foo.css`
-* `fonts/foo.woff`
-* `fonts/foo.ttf`
-* `fonts/foo.eot`
-* `fonts/foo.svg`
+* `assets/foo.css`
+* `assets/foo.woff`
+* `assets/foo.ttf`
+* `assets/foo.eot`
+* `assets/foo.svg`
 
-The file `fonts/foo.css` will contain the following:
+The file `assets/foo.css` will contain the following:
 
 ```css
 @font-face {
   font-family: 'foo';
-  src: url('../assets/foo.eot');
-  src: url('../assets/foo.eot?#iefix') format('embedded-opentype'),
-       url('../assets/foo.woff') format('woff'),
-       url('../assets/foo.ttf') format('truetype'),
-       url('../assets/foo.svg#foo') format('svg');
+  src: url('assets/foo.eot');
+  src: url('assets/foo.eot?#iefix') format('embedded-opentype'),
+       url('assets/foo.woff') format('woff'),
+       url('assets/foo.ttf') format('truetype'),
+       url('assets/foo.svg#foo') format('svg');
 }
 ```
 
@@ -40,8 +40,10 @@ Options
 
 * `-h` `--help`: Show a help message.
 * `-o` `--output`: Output directory where converted files will go.
-* `-p` `--prefix`: Prefix of font paths used in the generated CSS. Default is
-  `../assets/`.
+* `-p` `--prefix`: Prefix of the font paths used in the generated CSS. For
+  example, if your stylesheet is served from `css/` and your fonts from
+  `fonts/`, then you will want to set the prefix to `../fonts/`. The default
+  prefix is the name of the output directory.
 * `-f` `--family`: Font family name used in the generated CSS. Default is the
   base name of the input file.
 * `-c` `--css`: Alternate destination path for the generated CSS file.
