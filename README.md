@@ -30,7 +30,8 @@ The generator leverages two third-party libraries for converting fonts.
 FontForge supports a large number of font formats but has no support for the
 eot format. The blazingly fast sfntly library covers this gap.
 
-Invoking `make` will attempt to install these libraries on your system.
+Invoking `make` will check out the sfntly repository locally where
+`generate-webfonts` can find it.
 
 The script `generate-webfonts` is written in Python and therefore requires
 `python` to be installed on the system. The sfntly converter requires `javac`
