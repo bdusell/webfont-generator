@@ -118,13 +118,13 @@ def main():
     if css_font_family is None:
         css_font_family = input_base
     if css_prefix is None:
-        css_prefix = os.path.join(output_dirname, '')
+        css_prefix = output_dirname.replace(os.sep, '/').rstrip('/') + '/'
     generate_css(
         css_path,
         basename=input_base,
         font_family=css_font_family,
         prefix=css_prefix,
-        svg_id=input_base # TODO parse the SVG file for this
+        svg_id=input_base
     )
 
 if __name__ == '__main__':
