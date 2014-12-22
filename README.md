@@ -3,6 +3,15 @@ Web Font Generator
 
 One font goes in, all web fonts come out.
 
+The purpose of this tool is to automate the generation of web-friendly font
+formats and `@font-face` CSS rules from arbitrary font files, without having to
+rely on web services or otherwise requiring a network connection.
+
+See the
+[Using @font-face article](http://css-tricks.com/snippets/css/using-font-face/)
+on CSS-Tricks.com for more information about maximizing embedded font
+compatibility.
+
 Usage
 -----
 
@@ -82,3 +91,9 @@ Setup
 As mentioned above, run `make` to download sfntly and build the sfntly
 converter, and install FontForge so that the `fontforge` command is available
 to the driver script.
+
+Closing Thoughts
+----------------
+
+Please convert responsibly! Respect font creators' copyrights. Do not use a
+font which you are not licensed to use.
