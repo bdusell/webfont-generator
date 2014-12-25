@@ -31,12 +31,6 @@ public class ConvertFont {
 		}
 	}
 
-	private static void printList(java.util.Collection<String> c) {
-		System.out.println('[');
-		for(Object o : c) System.out.println(o);
-		System.out.println(']');
-	}
-
 	private static interface FontConverter {
 		public WritableFontData convert(Font font) throws IOException;
 		public String extension();
