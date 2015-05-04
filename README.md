@@ -25,6 +25,7 @@ specified by `-o`.
 The command above generates the following files:
 * `assets/foo.css`
 * `assets/foo.woff`
+* `assets/foo.woff2`
 * `assets/foo.ttf`
 * `assets/foo.eot`
 * `assets/foo.svg`
@@ -36,6 +37,7 @@ The file `assets/foo.css` will contain the following:
   font-family: 'foo';
   src: url('assets/foo.eot');
   src: url('assets/foo.eot?#iefix') format('embedded-opentype'),
+       url('assets/foo.woff2') format('woff2'),
        url('assets/foo.woff') format('woff'),
        url('assets/foo.ttf') format('truetype'),
        url('assets/foo.svg#foo') format('svg');
@@ -63,22 +65,24 @@ Supported Formats
 `generate-webfonts` reads all formats readable by FontForge, which include ttf,
 otf, svg, and woff. It cannot read eot.
 
-The generated font formats are woff, ttf, eot, and svg.
+The generated font formats are woff, woff2, ttf, eot, and svg.
 
 Dependencies
 ------------
 
-The generator leverages two third-party libraries for converting fonts.
+The generator leverages three third-party libraries for converting fonts.
 
-* [sfntly](https://code.google.com/p/sfntly/) by Google, the open-source Java library which powers Google Fonts
 * [FontForge](http://fontforge.github.io/en-US/), a free, general-purpose, and scriptable font editor program
+* [sfntly](https://code.google.com/p/sfntly/) by Google, the open-source Java library which powers Google Fonts
+* Google's [woff2 converter](https://github.com/google/woff2)
 
 FontForge supports a large number of font formats but has no support for the
 eot format. The blazingly fast sfntly library covers this gap.
 
-Invoking `make` will check out the sfntly repository locally where
-`generate-webfonts` can find it. Install FontForge using your package manager
-or directly from their [website](http://fontforge.github.io/en-US/).
+Invoking `make` will check out the sfntly and woff2 converter repositories
+locally where `generate-webfonts` can find them. Install FontForge using your
+package manager or directly from their
+[website](http://fontforge.github.io/en-US/).
 
 The script `generate-webfonts` is written in Python and therefore requires
 `python` to be installed on the system. The sfntly converter requires `javac`

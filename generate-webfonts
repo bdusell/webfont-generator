@@ -2,18 +2,20 @@
 import sys, re, os, os.path, subprocess
 from subprocess import Popen, PIPE
 
-BASE_DIR = os.path.dirname(__file__)
+VERSION = '1.1.0'
+
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 SFNTLY_PATHS = ['src/java', 'sfntly/java/build/classes']
 SFNTLY_CLASSPATH = ':'.join(os.path.join(BASE_DIR, p) for p in SFNTLY_PATHS)
 
 def escape(s):
     return s.replace('"', '\\"')
 
-def devnull(mode='r'):
+def devnull(mode):
     return open(os.devnull, mode)
 
 def fontforge_convert(finname, foutnames):
-    with devnull() as out:
+    with devnull('w') as out:
         p = Popen(['fontforge', '-lang=ff', '-script', '-'],
             stdin=PIPE, stdout=out, stderr=out)
         p.stdin.write('Open("%s")\n' % escape(finname))
@@ -31,14 +33,28 @@ def sfntly_convert(finname, formats):
     if r != 0:
         raise RuntimeError('sfntly conversion failed')
 
+def woff2_convert(finname):
+    with devnull('rw') as out:
+        r = subprocess.call(
+            [
+                os.path.join(BASE_DIR, 'woff2/woff2_compress'),
+                finname
+            ],
+            stdin=out,
+            stdout=out,
+            stderr=out
+        )
+        if r != 0:
+            raise RuntimeError('woff2 conversion failed')
+
 def generate_css(foutname, **kwargs):
-    # TODO include woff2
     with open(foutname, 'w') as fout:
         fout.write('''\
 @font-face {
   font-family: '%(font_family)s';
   src: url('%(prefix)s%(basename)s.eot');
   src: url('%(prefix)s%(basename)s.eot?#iefix') format('embedded-opentype'),
+       url('%(prefix)s%(basename)s.woff2') format('woff2'),
        url('%(prefix)s%(basename)s.woff') format('woff'),
        url('%(prefix)s%(basename)s.ttf') format('truetype'),
        url('%(prefix)s%(basename)s.svg#%(svg_id)s') format('svg');
@@ -54,6 +70,7 @@ rules.
 
 Options:
 -h --help     Show this help message.
+-v --version  Print version.
 -o --output   Output directory where converted files will go.
 -p --prefix   Prefix of font paths used in the generated CSS. Default is
               the output directory.
@@ -73,6 +90,9 @@ def main():
         arg = args.pop()
         if arg == '-h' or arg == '--help':
             usage(sys.stdout)
+            sys.exit(0)
+        elif arg == '-v' or arg == '--version':
+            print VERSION
             sys.exit(0)
         elif arg == '-o' or arg == '--output':
             output_dirname = args.pop()
@@ -103,14 +123,20 @@ def main():
     def output_path(f):
         return os.path.join(output_dirname, '%s.%s' % (input_base, f))
 
+    ttf_output_path = output_path('ttf')
+
     fontforge_convert(
         input_filename,
         map(output_path, fontforge_formats)
     )
 
     sfntly_convert(
-        output_path('ttf'),
+        ttf_output_path,
         sfntly_formats
+    )
+
+    woff2_convert(
+        ttf_output_path
     )
 
     if css_path is None:

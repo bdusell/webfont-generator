@@ -9,7 +9,7 @@ RM=rm -rf --
 
 SFNTLY_PATH=sfntly
 
-all: src/java/ConvertFont.class
+all: src/java/ConvertFont.class woff2/woff2_compress
 
 # Clean generated files except for downloaded files
 clean:
@@ -29,3 +29,12 @@ clean-all: clean
 
 src/java/ConvertFont.class: src/java/ConvertFont.java .make/sfntly-build
 	javac -cp src/java:sfntly/java/build/classes $<
+
+woff2/Makefile:
+	git clone http://github.com/google/woff2.git && \
+	cd woff2 && \
+	git submodule init && \
+	git submodule update
+
+woff2/woff2_compress:
+	make -C woff2 clean all
