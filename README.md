@@ -5,7 +5,8 @@ One font goes in, all web fonts come out.
 
 The purpose of this tool is to automate the generation of web-friendly font
 formats and `@font-face` CSS rules from arbitrary font files, without having to
-rely on web services or otherwise requiring a network connection.
+rely on web services or otherwise requiring a network connection. This tool can
+generate inline data URLs if needed.
 
 See the
 [Using @font-face article](http://css-tricks.com/snippets/css/using-font-face/)
@@ -24,23 +25,22 @@ Usage
 -----
 
 The driver script is `generate-webfonts`. At its most basic, it accepts a font
-file as its argument and spits out all of the converted fonts and a CSS
-stylesheet containing the appropriate `@font-face` rule to the directory
-specified by `-o`.
+file as its argument and spits out all of the converted fonts to a directory.
+It can also generate CSS for the appropriate `@font-face` rule as well.
 
-    ./bin/generate-webfonts -o assets MyFont.ttf
+    ./bin/generate-webfonts -o assets MyFont.ttf --css MyFont.css
 
-The command above, which uses the default settings, generates the following
-files:
+The command above, which uses the default output formats, generates the
+following files:
 
-* `assets/MyFont.css`
+* `MyFont.css`
 * `assets/MyFont.woff`
 * `assets/MyFont.woff2`
 * `assets/MyFont.ttf`
 * `assets/MyFont.eot`
 * `assets/MyFont.svg`
 
-The file `assets/MyFont.css` will contain the following:
+The file `MyFont.css` will contain the following:
 
 ```css
 @font-face {
@@ -54,6 +54,12 @@ The file `assets/MyFont.css` will contain the following:
 }
 ```
 
+Conceptually, given a list of input files and a list of output formats, the
+converter will attempt to satisfy all output format requirements by copying
+matching input files and converting files to fill in the gaps. Because of
+limitations in the underlying font converters, some intermediate formats not
+requested may be generated.
+
 See the options below for more advanced usage.
 
 Syntax
@@ -62,32 +68,46 @@ Syntax
 The script `bin/generate-webfonts` accepts a list of font files as input and a
 number of options:
 
-## `-o --output`
+### `-h --help`
 
-Output directory where converted files will go.
+Diplay usage instructions.
 
-## `-f --format`
+### `-o --output`
+
+Output directory where converted files will go. Even if only inline fonts are
+generated, a destination directory is still needed to contain intermediate font
+files.
+
+### `-f --format`
 
 Comma-separated list of output formats. Possible formats are `woff`, `woff2`,
 `ttf`, `eot`, `svg`, `otf`.
 
-The default setting is `eot,woff2,woff,ttf,svg`.
+Any format suffixed with `:inline` will cause the font to be inlined into the
+CSS file as a base64-encoded data URL, rather than a URL to a file.
 
-## `-c --css`
+The default format list is `eot,woff2,woff,ttf,svg`.
 
-Alternate destination path for the generated CSS file.
+### `-c --css`
 
-## `-p --prefix`
+Path for the generated CSS file. Use `-` for stdout. If omitted, no CSS is
+generated.
 
-Prefix of the font paths used in the generated CSS. For
-example, if your stylesheet is served from `css/` and your fonts from
-`fonts/`, then you will want to set the prefix to `../fonts/`. The default
-prefix is the name of the output directory.
+### `-p --prefix`
 
-## `--family`
+Prefix of the font paths used in the generated CSS. For example, if your
+stylesheet is served from `css/` and your fonts are served from `fonts/`, then
+you will want to set the prefix to `../fonts/`. The default prefix is the name
+of the output directory.
 
-Font family name used in the generated CSS. Default is the
-base name of the input file.
+### `--family`
+
+Font family name used in the generated CSS. Default is the base name of the
+first input file.
+
+### `-v --version`
+
+Display the version.
 
 Supported Formats
 -----------------
@@ -126,5 +146,4 @@ libraries.
 Closing Thoughts
 ----------------
 
-Please convert responsibly! Respect font creators' copyrights. Do not use a
-font which you are not licensed to use.
+Please convert responsibly! Respect font creators' copyrights.
