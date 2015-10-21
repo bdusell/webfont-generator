@@ -241,7 +241,7 @@ url(%s);
             url += '#' + escape_css_url(urllib.quote(font_file.svg_id()))
         output_font_strs.append("url(%s) format('%s')" % (url, css_format(f)))
     output_str = output_str_prefix + ',\n       '.join(output_font_strs) + ';\n}\n'
-    with (sys.stdout if file_name == '-' else open(file_name)) as fout:
+    with (sys.stdout if file_name == '-' else open(file_name, 'w')) as fout:
         fout.write(output_str)
 
 def _parse_output_formats(formats):
