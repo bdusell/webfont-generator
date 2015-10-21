@@ -44,13 +44,13 @@ The file `MyFont.css` will contain the following:
 
 ```css
 @font-face {
-  font-family: 'foo';
-  src: url('assets/foo.eot');
-  src: url('assets/foo.eot?#iefix') format('embedded-opentype'),
-       url('assets/foo.woff2') format('woff2'),
-       url('assets/foo.woff') format('woff'),
-       url('assets/foo.ttf') format('truetype'),
-       url('assets/foo.svg#foo') format('svg');
+  font-family: 'MyFont';
+  src: url('assets/MyFont.eot');
+  src: url('assets/MyFont.eot?#iefix') format('embedded-opentype'),
+       url('assets/MyFont.woff2') format('woff2'),
+       url('assets/MyFont.woff') format('woff'),
+       url('assets/MyFont.ttf') format('truetype'),
+       url('assets/MyFont.svg#foo') format('svg');
 }
 ```
 
