@@ -1,4 +1,1 @@
-/.make/
-/sfntly/
-/woff2/
-*.class
+/vendor/

@@ -21,14 +21,18 @@ import com.google.typography.font.tools.conversion.woff.WoffWriter;
 
 public class ConvertFont {
 
-	private static final String ERROR = "error";
-	private static final String FATAL = "fatal";
-
 	@SuppressWarnings("serial")
 	private static class Error extends Exception {
+
+		public Error() {
+		}
+
 		public Error(String msg) {
 			super(msg);
 		}
+	}
+
+	private static class UsageError extends Error {
 	}
 
 	private static interface FontConverter {
@@ -37,20 +41,26 @@ public class ConvertFont {
 	}
 
 	private static class EOTConverter implements FontConverter {
+
 		private EOTWriter writer = new EOTWriter();
+
 		public WritableFontData convert(Font font) throws IOException {
 			return writer.convert(font);
 		}
+
 		public String extension() {
 			return "eot";
 		}
 	}
 
 	private static class WOFFConverter implements FontConverter {
+
 		private WoffWriter writer = new WoffWriter();
+
 		public WritableFontData convert(Font font) throws IOException {
 			return writer.convert(font);
 		}
+
 		public String extension() {
 			return "woff";
 		}
@@ -58,9 +68,13 @@ public class ConvertFont {
 
 	private static FontConverter getFontConverter(String extension) {
 		extension = extension.toLowerCase();
-		if("woff".equals(extension)) return new WOFFConverter();
-		else if("eot".equals(extension)) return new EOTConverter();
-		else return null;
+		if("woff".equals(extension)) {
+			return new WOFFConverter();
+		} else if("eot".equals(extension)) {
+			return new EOTConverter();
+		} else {
+			return null;
+		}
 	}
 
 	public static void main(String[] argv) {
@@ -68,95 +82,105 @@ public class ConvertFont {
 		try {
 			Queue<String> args = new LinkedList<String>(Arrays.asList(argv));
 
-			List<String> fileNames = new ArrayList<String>();
-			String formatList = null, selectString = null;
+			String inputFileName = null;
+			List<String> outputFileNames = new ArrayList<String>();
+			String selectString = null;
 
 			String arg;
 			while((arg = args.poll()) != null) {
-				if(arg.equals("--")) {
-					fileNames.addAll(args);
+				if(arg.equals("-i") || arg.equals("--input")) {
+					inputFileName = args.poll();
 					break;
+				} else if(arg.equals("-o") || arg.equals("--output")) {
+					String name = args.poll();
+					if(name == null) {
+						throw new UsageError();
+					}
+					outputFileNames.add(name);
+				} else if(arg.equals("-s") || arg.equals("--select")) {
+					selectString = args.poll();
+					if(selectString == null) {
+						throw new UsageError();
+					}
 				} else if(arg.equals("-h") || arg.equals("--help")) {
 					showHelp(System.out);
 					System.exit(0);
-				} else if(arg.equals("-f") || arg.equals("--format")) {
-					formatList = args.poll();
-				} else if(arg.equals("-s") || arg.equals("--select")) {
-					selectString = args.poll();
+				} else if(inputFileName == null) {
+					inputFileName = arg;
 				} else {
-					fileNames.add(arg);
+					throw new UsageError();
 				}
 			}
 
-			final Integer ALL_FONTS = null;
-			Integer fontSelection = ALL_FONTS;
-			if(selectString != null) fontSelection = Integer.parseInt(selectString) - 1;
-
-			if(fileNames.isEmpty()) throw new Error("at least one input file is required");
-			if(formatList == null) throw new Error("at least one output format is required");
-
-			List<FontConverter> fontConverters = new ArrayList<FontConverter>();
-			for(String format : Arrays.asList(formatList.split(","))) {
-				FontConverter c = getFontConverter(format.toLowerCase());
-				if(c == null) {
-					throw new Error(
-						"output format " + format + " not recognized\n" +
-						"    available formats are: woff, eot"
-					);
+			if(inputFileName == null) {
+				throw new UsageError();
+			}
+			if(outputFileNames.isEmpty()) {
+				throw new UsageError();
+			}
+			int fontSelection = 0;
+			if(selectString != null) {
+				fontSelection = Integer.parseInt(selectString) - 1;
+				if(fontSelection < 0) {
+					throw new Error("invalid selection number");
 				}
-				fontConverters.add(c);
 			}
 
 			/* Arguments have been checked. */
 
-			for(String fileName : fileNames) {
-
-				/* Open the input file. */
-				InputStream fin = null;
-				fin = new FileInputStream(fileName);
-
-				try {
-					/* Read the fonts from the input file. */
-					FontFactory fontFactory = FontFactory.getInstance();
-					Font[] allFonts = fontFactory.loadFonts(fin);
-
-					List<Font> fonts = new ArrayList<Font>();
-					if(fontSelection == ALL_FONTS) {
-						fonts.addAll(Arrays.asList(allFonts));
-					} else if(fontSelection >= 0 && fontSelection < allFonts.length) {
-						fonts.add(allFonts[fontSelection]);
-					} else {
-						throw new Error("selection " + fontSelection + " not found in " + fileName);
-					}
-
-					for(FontConverter c : fontConverters) {
-						int i = 0;
-						for(Font font : fonts) {
-							/* Read the font. */
-							WritableFontData data = c.convert(font);
-
-							/* Open the output file. */
-							String foutName =
-								chopSuffix(fileName) +
-								(fonts.size() > 1 ? "." + ++i : "") +
-								"." + c.extension();
-							OutputStream fout = new FileOutputStream(foutName);
-							try {
-								/* Write the data to the output file. */
-								data.copyTo(fout);
-							} finally {
-								fout.close();
-							}
-						}
-					}
-				} finally {
-					fin.close();
+			/* Check the output formats. */
+			List<FontConverter> converters = new ArrayList<FontConverter>(outputFileNames.size());
+			for(String outputFileName : outputFileNames) {
+				/* Choose the output format based on the file extension. */
+				String ext = getExtension(outputFileName);
+				if(ext == null) {
+					throw new Error("output format for " + outputFileName +
+						" not recognized");
 				}
+				FontConverter converter = getFontConverter(ext);
+				if(converter == null) {
+					throw new Error("output format " + ext + " not recognized");
+				}
+				converters.add(converter);
 			}
-		} catch(Error e) {
+
+			/* Open the input file. */
+			InputStream fin = null;
+			fin = new FileInputStream(inputFileName);
+
+			try {
+				/* Read the fonts from the input file. */
+				FontFactory fontFactory = FontFactory.getInstance();
+				Font[] allFonts = fontFactory.loadFonts(fin);
+
+				Font inputFont;
+				if(fontSelection < allFonts.length) {
+					inputFont = allFonts[fontSelection];
+				} else {
+					throw new Error("selection " + (fontSelection + 1) + " not found in " + inputFileName);
+				}
+
+				for(int i = 0, n = outputFileNames.size(); i < n; ++i) {
+					/* Convert the font. */
+					WritableFontData data = converters.get(i).convert(inputFont);
+					/* Open the output file. */
+					OutputStream fout = new FileOutputStream(outputFileNames.get(i));
+					try {
+						/* Write the data to the output file. */
+						data.copyTo(fout);
+					} finally {
+						fout.close();
+					}
+				}
+			} finally {
+				fin.close();
+			}
+		} catch(UsageError e) {
 			showHelp(System.err);
+			System.exit(1);
+		} catch(Error e) {
 			System.err.println("error: " + e.getMessage());
-			System.exit(2);
+			System.exit(1);
 		} catch(Exception e) {
 			e.printStackTrace();
 			System.exit(1);
@@ -165,20 +189,29 @@ public class ConvertFont {
 
 	private static void showHelp(PrintStream out) {
 		out.print(
-			"ConvertFont -f <formats> <font-files> ...\n" +
+			"Usage: java ConvertFont <input-file> -o <output-file>\n" +
 			"\n" +
-			"Convert font files.\n" +
+			"  Convert a TTF font file to WOFF and/or EOT.\n" +
 			"\n" +
-			"-h | --help    Show this help message.\n" +
-			"-f <formats>   A comma-separated list of the output formats to convert each input font to.\n" +
-			"               Supported formats are woff and eot.\n" +
-			"--             End of options.\n" +
-			"<font-files>   The input font files to be converted.\n"
+			"Arguments:\n" +
+			"  [-i --input] <input-file>\n" +
+			"                A TTF font file.\n" +
+			"\n" +
+			"Options:\n" +
+			"  -o --output <output-file>\n" +
+			"                The name of an output file to convert the input file to.\n" +
+			"                The format is determined by the file extension. Possible output\n" +
+			"                formats are .woff and .eot. The `-o` flag may be listed\n" +
+			"                multiple times to specify multiple output files.\n" +
+			"  -s --select <integer>\n" +
+			"                When reading a font with multiple font definitions, selects the\n" +
+			"                nth font in the file. By default, selects the first font.\n" +
+			"  -h --help     This help message.\n"
 		);
 	}
 
-	private static String chopSuffix(String s) {
+	private static String getExtension(String s) {
 		int index = s.lastIndexOf('.');
-		return index < 0 ? s : s.substring(0, index);
+		return index < 0 ? null : s.substring(index + 1);
 	}
 }
