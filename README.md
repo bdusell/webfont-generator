@@ -135,7 +135,7 @@ package manager or directly from their
 [website](http://fontforge.github.io/en-US/).
 
 Other commands required to use this tool and its setup script are: `python`,
-`java`, `javac`, `ant`, `git`, `svn`.
+`java`, `javac`, `ant`, `git`.
 
 Setup
 -----

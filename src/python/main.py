@@ -4,7 +4,7 @@ import sys, os, os.path, re, shutil, subprocess, urllib, base64
 from os.path import dirname
 from subprocess import Popen, PIPE
 
-VERSION = '1.2.0'
+VERSION = '1.2.2'
 
 BASE_DIR = dirname(dirname(dirname(os.path.realpath(__file__))))
 
