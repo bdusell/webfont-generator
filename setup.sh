@@ -47,7 +47,7 @@ require_command() {
 }
 
 fetch_sfntly() {
-  if [[ ! -d $SFNTLY_DIR ]]; then
+  if [ ! -d $SFNTLY_DIR ]; then
     log 'Fetching sfntly...'
     git clone https://github.com/googlei18n/sfntly.git "$SFNTLY_DIR"
   fi
@@ -59,7 +59,7 @@ build_sfntly() {
 }
 
 fetch_woff2() {
-  if [[ ! -d $WOFF2_DIR ]]; then
+  if [ ! -d $WOFF2_DIR ]; then
     log 'Fetching woff2...'
     git clone http://github.com/google/woff2.git "$WOFF2_DIR" &&
     (
