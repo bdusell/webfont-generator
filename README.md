@@ -17,7 +17,7 @@ Quickstart
 ----------
 
 ```sh
-./setup.sh # Fetch and build third-party libraries
+./setup # Fetch and build third-party libraries
 ./bin/generate-webfonts MyFont.ttf -o assets/ # Convert a font
 ```
 
@@ -129,7 +129,7 @@ The generator leverages three third-party libraries for converting fonts.
 FontForge supports a good number of font formats but has no support for the
 eot format. The blazingly fast sfntly library covers this gap.
 
-Running `./setup.sh` will check out the sfntly and woff2 converter repositories
+Running `./setup` will check out the sfntly and woff2 converter repositories
 locally where `generate-webfonts` can find them. Install FontForge using your
 package manager or directly from their
 [website](http://fontforge.github.io/en-US/).
@@ -140,7 +140,7 @@ Other commands required to use this tool and its setup script are: `python`,
 Setup
 -----
 
-As mentioned above, run `./setup.sh` to download and build the third-party
+As mentioned above, run `./setup` to download and build the third-party
 libraries.
 
 Closing Thoughts
