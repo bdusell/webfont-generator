@@ -4,6 +4,7 @@ import shutil
 import subprocess
 
 from util import indent
+from error import Error
 
 _d = os.path.dirname
 
@@ -24,6 +25,9 @@ class FontFile(object):
         new_full_path = new_path_without_ext + os.extsep + format
         return FontFile(new_full_path, new_path_without_ext, format)
 
+    def basename(self):
+        return os.path.basename(self.full_path)
+
     def svg_id(self):
         return os.path.basename(self.path_without_extension)
 
@@ -37,20 +41,21 @@ def ensure_directory_exists(path):
 def ensure_file_directory_exists(path):
     ensure_directory_exists(os.path.dirname(path))
 
-def copy_file(input_files, output_files):
-    print('copy')
+def copy_file(input_files, output_files, logger):
     for input_file in input_files:
         for output_file in output_files:
-            _copy_file(input_file.full_path, output_file.full_path)
+            input_path = input_file.full_path
+            output_path = output_file.full_path
+            logger.info('copying %s to %s' % (input_path, output_path))
+            _copy_file(input_path, output_path)
             return
 
 def _copy_file(input_path, output_path):
     ensure_file_directory_exists(output_path)
     try:
-        shutil.copy(input_path, output_path)
-    except shutil.Error as e:
-        if not e.message.endswith(' are the same file'):
-            raise Error(e.message)
+        shutil.copyfile(input_path, output_path)
+    except shutil.SameFileError as e:
+        pass
 
 def _devnull(mode):
     return open(os.devnull, mode)
@@ -58,11 +63,12 @@ def _devnull(mode):
 def _ff_escape(s):
     return s.replace('"', '\\"')
 
-def convert_with_fontforge(input_files, output_files):
-    print('fontforge')
+def convert_with_fontforge(input_files, output_files, logger):
     for input_file in input_files:
-        _convert_with_fontforge(
-            input_file.full_path, (f.full_path for f in output_files))
+        input_path = input_file.path
+        output_paths = [f.full_path for f in output_files]
+        logger.info('using FontForge to convert %s to %s' % (input_path, ', '.join(output_paths)))
+        _convert_with_fontforge(input_path, output_paths)
         return
 
 def _convert_with_fontforge(input_path, output_paths):
@@ -80,10 +86,12 @@ def _convert_with_fontforge(input_path, output_paths):
         if p.wait() != 0:
             raise Error('FontForge conversion failed:\n\n' + indent(err, '  '))
 
-def convert_with_sfntly(input_files, output_files):
-    print('sfntly')
+def convert_with_sfntly(input_files, output_files, logger):
     for input_file in input_files:
-        _convert_with_sfntly(input_file.full_path, (f.full_path for f in output_files))
+        input_path = input_file.full_path
+        output_paths = [f.full_path for f in output_files]
+        logger.info('using sfntly to convert %s to %s' % (input_path, ', '.join(output_paths)))
+        _convert_with_sfntly(input_path, output_paths)
 
 SFNTLY_CLASSPATH = ':'.join([
     os.path.join(BASE_DIR, 'src', 'java'),
@@ -100,10 +108,11 @@ def _convert_with_sfntly(input_path, output_paths):
     if subprocess.call(command) != 0:
         raise Error('sfntly conversion failed')
 
-def convert_with_woff2_compress(input_files, output_files):
-    print('woff2_compress')
+def convert_with_woff2_compress(input_files, output_files, logger):
     for input_file in input_files:
-        _convert_with_woff2_compress(input_file.full_path)
+        input_path = input_file.full_path
+        logger.info('using woff2_compress to convert %s to woff2' % input_path)
+        _convert_with_woff2_compress(input_path)
         return
 
 WOFF2_COMPRESS_PATH = os.path.join(VENDOR_DIR, 'woff2', 'woff2_compress')
@@ -115,18 +124,18 @@ def _convert_with_woff2_compress(input_path):
         if code != 0:
             raise Error('conversion with woff2_compress failed')
 
-def convert_with_woff2_decompress(input_files, output_files):
-    print('woff2_decompress')
+def convert_with_woff2_decompress(input_files, output_files, logger):
     for input_file in input_files:
-        _convert_with_woff2_decompress(input_file.full_path)
+        input_path = input_file.full_path
+        logger.info('using woff2_decompress to convert %s to ttf' % input_path)
+        _convert_with_woff2_decompress(input_path)
         return
 
 WOFF2_DECOMPRESS_PATH = os.path.join(VENDOR_DIR, 'woff2', 'woff2_decompress')
 
-def _convert_with_woff2_decompress(input_name):
+def _convert_with_woff2_decompress(input_path):
     with _devnull('r') as fin, _devnull('w') as fout:
         code = subprocess.call([WOFF2_DECOMPRESS_PATH, input_path],
             stdin=fin, stdout=fout, stderr=fout)
         if code != 0:
             raise Error('conversion with woff2_decompress failed')
-

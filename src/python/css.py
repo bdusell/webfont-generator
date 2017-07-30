@@ -1,5 +1,6 @@
 import re
 import base64
+import urllib.parse
 
 ESCAPE_CSS_STR_PAT = re.compile('(\')|(\\n)')
 
@@ -38,38 +39,57 @@ MEDIA_TYPE_MAPPING = {
 def media_type(format):
     return MEDIA_TYPE_MAPPING[format]
 
-def data_url(format, file_path):
-    with open(file_path) as fin:
+def write_data_url(out, format, file_path):
+    out.write('data:')
+    out.write(media_type(format))
+    out.write(';base64,')
+    with open(file_path, 'rb') as fin:
         data = fin.read()
-    return 'data:%s;base64,%s' % (media_type(format), base64.b64encode(data))
+    out.write(base64.b64encode(data).decode('ascii'))
 
-def generate_css(file_name, formats, file_pool, prefix, font_family):
+def _file_url(prefix, font_file):
+    return escape_css_url(prefix + urllib.parse.quote_plus(font_file.basename()))
+
+def generate_css(out, formats, output_files, prefix, font_family):
     formats = list(formats)
-    output_str_prefix = '''\
+    out.write("""\
 @font-face {
-  font-family: '%s';
-  src: ''' % escape_css_str(font_family)
-    output_font_strs = []
+  font-family: '""")
+    out.write(escape_css_str(font_family))
+    out.write("""';
+  src: """)
     try:
+        # The eot file needs to be printed first
         formats.remove(('eot', False))
     except ValueError:
-        pass
+        first = True
     else:
-        eot_file = file_pool['eot']
-        eot_url = escape_css_url(prefix + eot_file.basename())
-        output_str_prefix += '''\
-url(%s);
-  src: ''' % eot_url
-        output_font_strs.append("url(%s?#iefix) format('embedded-opentype')" % eot_url)
+        eot_url = _file_url(prefix, font_files['eot'])
+        out.write('url(')
+        out.write(eot_url)
+        out.write(''');
+  src: url(''')
+        out.write(eot_url)
+        out.write("?#iefix) format('embedded-opentype')")
+        first = False
     for f, inline in formats:
-        font_file = file_pool[f]
-        if inline:
-            url = data_url(f, font_file.path)
+        if first:
+            first = False
         else:
-            url = escape_css_url(prefix + urllib.quote_plus(font_file.basename()))
+            out.write(''',
+       ''')
+        out.write('url(')
+        font_file = output_files[f]
+        if inline:
+            write_data_url(out, f, font_file.full_path)
+        else:
+            out.write(_file_url(prefix, font_file))
         if f == 'svg':
-            url += '#' + escape_css_url(urllib.quote(font_file.svg_id()))
-        output_font_strs.append("url(%s) format('%s')" % (url, css_format(f)))
-    output_str = output_str_prefix + ',\n       '.join(output_font_strs) + ';\n}\n'
-    with (sys.stdout if file_name == '-' else open(file_name, 'w')) as fout:
-        fout.write(output_str)
+            out.write('#')
+            out.write(escape_css_url(urllib.parse.quote(font_file.svg_id())))
+        out.write(") format('")
+        out.write(css_format(f))
+        out.write("')")
+    out.write(''';
+}
+''')

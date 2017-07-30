@@ -3,11 +3,13 @@
 import sys
 import os
 import os.path
+import logging
 
-from operations import FontFile
-from dependencies import FORMATS_SET, convert_files
 from util import remove_suffix
 from error import Error
+from operations import FontFile
+from dependencies import FORMATS_SET, convert_files
+from css import generate_css
 
 VERSION = '1.3.0-dev'
 
@@ -47,7 +49,8 @@ Options:
   --font-family <name>
                 Name of the font family used in the CSS file. Default is the
                 base name of the first input file.
-  -v --version  Display version.
+  --verbose     Show verbose output while running.
+  --version     Display version.
   -h --help     Show this help message.
 ''')
 
@@ -59,6 +62,7 @@ def main():
     css_file_name = None
     prefix_str = None
     font_family = None
+    be_verbose = False
     args = sys.argv[:0:-1]
     while args:
         arg = args.pop()
@@ -72,6 +76,8 @@ def main():
             prefix_str = args.pop()
         elif arg == '--font-family' or arg == '--family':
             font_family = args.pop()
+        elif arg == '--verbose':
+            be_verbose = True
         elif arg == '-v' or arg == '--version':
             sys.stdout.write(VERSION + '\n')
             sys.exit(0)
@@ -94,25 +100,27 @@ def main():
         ext = ext[1:]
         if ext not in FORMATS_SET:
             if ext:
-                sys.stderr.write('Unrecognized input format: %r\n\n' % ext)
+                print('Unrecognized input format: %r\n' % ext, file=sys.stderr)
             else:
-                sys.stderr.write('Cannot determine format of %r\n\n' % input_file_name)
+                print('Cannot determine format of %r\n' % input_file_name, file=sys.stderr)
             usage(sys.stderr)
             sys.exit(1)
         input_files.append(FontFile(input_file_name, name, ext))
     # Parse output formats, or use defaults if not specified
     if output_formats_str is None:
         output_formats = ['eot', 'woff2', 'woff', 'ttf', 'svg']
+        parsed_output_formats = [(f, False) for f in output_formats]
     else:
         output_formats = output_formats_str.split(',')
-        unrecognized_formats = FORMATS_SET - set(output_formats)
+        # Check if any formats are suffixed with `:inline`
+        parsed_output_formats = list(map(
+            lambda f: remove_suffix(f, ':inline'), output_formats))
+        # Check for unrecognized formats
+        unrecognized_formats = set(f for f, inline in parsed_output_formats) - FORMATS_SET
         if unrecognized_formats:
-            sys.stderr.write('Unrecognized output formats: %s' % ', '.join(unrecognized_formats))
+            print('Unrecognized output formats: %s\n' % ', '.join(unrecognized_formats), file=sys.stderr)
             usage(sys.stderr)
             sys.exit(1)
-    # Check if any formats are suffixed with `:inline`
-    parsed_output_formats = list(map(
-        lambda f: remove_suffix(f, ':inline'), output_formats))
     # Check if CSS will be generated
     do_generate_css = css_file_name is not None
     if do_generate_css:
@@ -127,23 +135,29 @@ def main():
         # If no font family name is specified, use a default
         if font_family is None:
             font_family = os.path.splitext(os.path.basename(input_file_names[0]))[0]
+    # Configure the logger for verbosity
+    logger = logging.getLogger('webfont-generator')
+    logger.addHandler(logging.StreamHandler())
+    if be_verbose:
+        logger.setLevel(logging.INFO)
+    else:
+        logger.setLevel(logging.WARNING)
+    # Generate files for all requested output formats, even the inline
+    # ones, since inlining requires the contents of the output files
+    # anyway
+    output_formats = set(f for f, inline in parsed_output_formats)
     try:
-        convert_files(
-            input_files,
-            output_dir,
-            # Generate files for all requested output formats, even the inline
-            # ones, since inlining requires the contents of the output files
-            # anyway
-            set(f for f, inline in parsed_output_formats))
+        output_files = convert_files(input_files, output_dir, output_formats, logger)
         if do_generate_css:
-            generate_css(
-                css_file_name,
-                parsed_output_formats,
-                file_pool,
-                prefix_str,
-                font_family)
+            if css_file_name == '-':
+                css_fout = sys.stdout
+            else:
+                css_fout = open(css_file_name, 'w')
+            with css_fout:
+                generate_css(css_fout, parsed_output_formats, output_files,
+                    prefix_str, font_family)
     except Error as e:
-        sys.stderr.write(e.message + '\n')
+        print(e, file=sys.stderr)
         sys.exit(1)
 
 if __name__ == '__main__':

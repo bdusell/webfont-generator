@@ -39,10 +39,10 @@ class TreeVertex(graph.Vertex):
     def incoming_edges(self):
         return self._incoming_edges.values()
 
-    def process(self):
+    def process(self, logger):
         input_files = (e.file for e in self.incoming_edges)
         output_files = (e.file for e in self.outgoing_edges)
-        self.value(input_files, output_files)
+        self.value(input_files, output_files, logger)
 
 class Vector:
     """Simple vector class for lexicographically orderable edge weights."""
@@ -59,10 +59,10 @@ class Vector:
 
 Vertex = ShortestPathsVertex
 
-def noop(input_files, output_files):
+def noop(input_files, output_files, logger):
     pass
 
-def construct_dependency_graph(input_files, output_dir):
+def construct_dependency_graph(input_files, output_files):
     """Construct the dependency graph which describes which programs can be
     used to convert which files."""
     # Create a super-source vertex
@@ -71,35 +71,26 @@ def construct_dependency_graph(input_files, output_dir):
     input_vertices = { f : Vertex(noop) for f in FORMATS }
     # For every input file, connect the super-source to the appropriate input
     # vertex
-    input_files_dict = {}
-    first_input_file = None
-    for input_file in input_files:
-        if first_input_file is None:
-            first_input_file = input_file
-        input_files_dict[input_file.format] = input_file
+    for input_file in input_files.values():
         source_vertex.add_edge(
             input_vertices[input_file.format], Vector(0, 0, 0), None)
-    # Use the first input file to determine the names for the output files
-    output_files = {
-        f : first_input_file.moved_and_converted_to(output_dir, f)
-        for f in FORMATS }
     # Create a vertex for every possible output
     output_vertices = { f : Vertex(noop) for f in FORMATS }
     # For every format, allow an output file to be copied from an input file
     # in the same format
     for f in FORMATS:
         copy_vertex = Vertex(copy_file)
-        if f in input_files_dict:
+        if f in input_files:
             input_vertices[f].add_edge(
-                copy_vertex, Vector(0, 0, 0), input_files_dict[f])
+                copy_vertex, Vector(0, 0, 0), input_files[f])
         copy_vertex.add_edge(
             output_vertices[f], Vector(0, 0, 1), output_files[f])
     # FontForge can convert any one of ttf, otf, woff, svg to any of ttf, svg
     fontforge_vertex = Vertex(convert_with_fontforge)
     for f in ('ttf', 'otf', 'woff', 'svg'):
-        if f in input_files_dict:
+        if f in input_files:
             input_vertices[f].add_edge(
-                fontforge_vertex, Vector(0, 0, 0), input_files_dict[f])
+                fontforge_vertex, Vector(0, 0, 0), input_files[f])
         output_vertices[f].add_edge(
             fontforge_vertex, Vector(0, 0, 0), output_files[f])
     for f in ('ttf', 'svg'):
@@ -107,9 +98,9 @@ def construct_dependency_graph(input_files, output_dir):
             output_vertices[f], Vector(1, 0, 0), output_files[f])
     # sfntly can convert ttf to any of woff, eot
     sfntly_vertex = Vertex(convert_with_sfntly)
-    if 'ttf' in input_files_dict:
+    if 'ttf' in input_files:
         input_vertices['ttf'].add_edge(
-            sfntly_vertex, Vector(0, 0, 0), input_files_dict['ttf'])
+            sfntly_vertex, Vector(0, 0, 0), input_files['ttf'])
     output_vertices['ttf'].add_edge(
         sfntly_vertex, Vector(0, 0, 0), output_files[f])
     for f in ('woff', 'eot'):
@@ -131,17 +122,24 @@ def construct_dependency_graph(input_files, output_dir):
     # Return the super-source and output vertices
     return source_vertex, output_vertices
 
-def convert_files(input_files, output_dir, output_formats):
+def convert_files(input_files, output_dir, output_formats, logger):
+    # Use the first input file to determine the names for the output files
+    input_files = list(input_files)
+    input_files_dict = { f.format : f for f in input_files }
+    output_files_dict = {
+        f : input_files[0].moved_and_converted_to(output_dir, f)
+        for f in FORMATS }
+    output_formats = list(output_formats)
     # Construct the conversion dependency graph
     source_vertex, output_vertices = construct_dependency_graph(
-        input_files, output_dir)
-    destination_vertices = set(output_vertices[f] for f in output_formats)
+        input_files_dict, output_files_dict)
+    destination_vertices = [output_vertices[f] for f in output_formats]
     # Compute the shortest paths from the super-source vertex to the vertices
     # corresponding to each of the requested output formats
     reachable_vertices = graph.compute_shortest_paths(
         source_vertex, destination_vertices, Vector(0, 0, 0))
     # Raise an error if any of the output formats cannot be generated
-    unreachable_vertices = destination_vertices - reachable_vertices
+    unreachable_vertices = set(destination_vertices) - reachable_vertices
     if unreachable_vertices:
         raise Error('unable to generate the following files: %s' % ' '.join(
             v.file.full_path for v in unreachable_vertices))
@@ -150,4 +148,6 @@ def convert_files(input_files, output_dir, output_formats):
         source_vertex, destination_vertices)
     # Execute the tasks in topological order
     for vertex in graph.preorder_traversal(dependency_tree):
-        vertex.process()
+        vertex.process(logger)
+    # Return the output file objects
+    return { f : output_files_dict[f] for f in output_formats }
