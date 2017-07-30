@@ -61,12 +61,7 @@ build_sfntly() {
 fetch_woff2() {
   if [[ ! -d $WOFF2_DIR ]]; then
     log 'Fetching woff2...'
-    git clone http://github.com/google/woff2.git "$WOFF2_DIR" &&
-    (
-      cd "$WOFF2_DIR" &&
-      git submodule init &&
-      git submodule update
-    )
+    git clone --recursive http://github.com/google/woff2.git "$WOFF2_DIR"
   fi
 }
 

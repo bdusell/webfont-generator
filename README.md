@@ -60,6 +60,13 @@ matching input files and converting files to fill in the gaps. Because of
 limitations in the underlying font converters, some intermediate formats not
 requested may be generated.
 
+The command will avoid generating a file in a certain output format if a file
+matching that format is already listed as one of the inputs. In this case, the
+input file will simply be copied to the destination directory (or left alone,
+if it is already in the output directory). If such a file is not listed in the
+arguments, it will be overwritten with a newly converted file, even if it
+already exists in the output directory.
+
 See the options below for more advanced usage.
 
 Syntax
@@ -126,8 +133,10 @@ The generator leverages three third-party libraries for converting fonts.
 * [sfntly](https://code.google.com/p/sfntly/) by Google, the open-source Java library which powers Google Fonts
 * Google's [woff2 converter](https://github.com/google/woff2)
 
-FontForge supports a good number of font formats but has no support for the
-eot format. The blazingly fast sfntly library covers this gap.
+FontForge supports a good number of font formats, although it has no support
+for the eot format. The blazingly fast sfntly library covers this gap. The
+woff2 converter from Google is used to convert between the woff2 and ttf
+formats.
 
 Running `./setup` will check out the sfntly and woff2 converter repositories
 locally where `generate-webfonts` can find them. Install FontForge using your

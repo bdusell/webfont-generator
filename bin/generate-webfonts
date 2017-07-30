@@ -1,1 +1,3 @@
-../src/python/main.py
+#!/bin/bash
+BASE_DIR="$(dirname "${BASH_SOURCE-$0}")"/..
+PYTHONPATH="$BASE_DIR"/src/python:"$PYTHONPATH" python "$BASE_DIR"/src/python/generate_webfonts.py "$@"

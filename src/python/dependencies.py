@@ -1,11 +1,21 @@
+import operator
+
 import graph
+from operations import (copy_file, convert_with_fontforge, convert_with_sfntly,
+    convert_with_woff2_compress, convert_with_woff2_decompress)
+
+FORMATS = ['ttf', 'otf', 'svg', 'eot', 'woff', 'woff2']
+FORMATS_SET = set(FORMATS)
 
 class ShortestPathsVertex(graph.ShortestPathsVertex):
 
     def create_copy(self):
         return TreeVertex(self.value)
 
-    class Edge(graph.ShortPathsVertex.Edge):
+    def add_edge(self, vertex_to, weight, file):
+        self.add_edge_object(self.Edge(self, vertex_to, weight, file))
+
+    class Edge(graph.ShortestPathsVertex.Edge):
 
         def __init__(self, vertex_from, vertex_to, weight, file):
             super().__init__(vertex_from, vertex_to, weight)
@@ -24,9 +34,6 @@ class TreeVertex(graph.Vertex):
     def add_edge_object(self, edge):
         super().add_edge_object(edge)
         edge.vertex_to._incoming_edges[self] = edge
-
-    def add_edge(self, vertex_to, weight, file):
-        self.add_edge_object(self.Edge(self, vertex_to, weight, file))
 
     @property
     def incoming_edges(self):
@@ -122,16 +129,16 @@ def construct_dependency_graph(input_files, output_dir):
     woff2_decompress_vertex.add_edge(
         output_vertices['ttf'], Vector(0, 1, 0), output_files['ttf'])
     # Return the super-source and output vertices
-    source_vertex, output_vertices
+    return source_vertex, output_vertices
 
 def convert_files(input_files, output_dir, output_formats):
     # Construct the conversion dependency graph
     source_vertex, output_vertices = construct_dependency_graph(
         input_files, output_dir)
-    destination_vertices = (output_vertices[f] for f in output_formats)
+    destination_vertices = set(output_vertices[f] for f in output_formats)
     # Compute the shortest paths from the super-source vertex to the vertices
     # corresponding to each of the requested output formats
-    reachable_vertices = compute_shortest_paths(
+    reachable_vertices = graph.compute_shortest_paths(
         source_vertex, destination_vertices, Vector(0, 0, 0))
     # Raise an error if any of the output formats cannot be generated
     unreachable_vertices = destination_vertices - reachable_vertices
@@ -139,8 +146,8 @@ def convert_files(input_files, output_dir, output_formats):
         raise Error('unable to generate the following files: %s' % ' '.join(
             v.file.full_path for v in unreachable_vertices))
     # Follow the shortest-paths backpointers and construct a dependency sub-tree
-    dependency_tree = construct_shortest_paths_subtree(
+    dependency_tree = graph.construct_shortest_paths_subtree(
         source_vertex, destination_vertices)
     # Execute the tasks in topological order
-    for vertex in preorder_traversal(dependency_tree):
+    for vertex in graph.preorder_traversal(dependency_tree):
         vertex.process()

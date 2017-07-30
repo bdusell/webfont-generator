@@ -118,9 +118,9 @@ def construct_shortest_paths_subtree(source_vertex, destination_vertices):
     for vertex in destination_vertices:
         vertex_to = vertex_copies.get(vertex)
         if vertex_to is None:
-            continue
-        else:
             vertex_to = vertex_copies[vertex] = vertex.create_copy()
+        else:
+            continue
         for edge in vertex.reversed_path_edges():
             vertex_from = vertex_copies.get(edge.vertex_from)
             if vertex_from is None:
