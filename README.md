@@ -75,23 +75,26 @@ Syntax
 The script `bin/generate-webfonts` accepts a list of font files as input and a
 number of options:
 
-### `-h --help`
-
-Diplay usage instructions.
-
 ### `-o --output`
 
-Output directory where converted files will go. Even if only inline fonts are
-generated, a destination directory is still needed to contain intermediate font
-files.
+Destination directory for converted files. Even if only inline
+fonts are generated, a destination directory is needed to hold
+intermediate files.
 
 ### `-f --format`
 
-Comma-separated list of output formats. Possible formats are `woff`, `woff2`,
-`ttf`, `eot`, `svg`, `otf`.
+Comma-separated list of output formats. Possible formats are:
 
-Any format suffixed with `:inline` will cause the font to be inlined into the
-CSS file as a base64-encoded data URL, rather than a URL to a file.
+* ttf
+* woff
+* woff2
+* eot
+* svg
+* otf
+
+Any format suffixed with `:inline` will cause the font to be
+inlined in the CSS file as a base64-encoded data URL, rather
+than a URL to a file.
 
 The default format list is `eot,woff2,woff,ttf,svg`.
 
@@ -107,36 +110,54 @@ stylesheet is served from `css/` and your fonts are served from `fonts/`, then
 you will want to set the prefix to `../fonts/`. The default prefix is the name
 of the output directory.
 
-### `--family`
+### `--font-family`
 
-Font family name used in the generated CSS. Default is the base name of the
-first input file.
+Name of the font family used in the CSS file. Default is the
+base name of the first input file.
 
-### `-v --version`
+### `--verbose`
 
-Display the version.
+Show verbose output while running.
+
+### `--version`
+
+Display version.
 
 Supported Formats
 -----------------
 
-`generate-webfonts` reads all formats readable by FontForge, which include ttf,
-otf, svg, and woff. It cannot read eot.
+`generate-webfonts` supports the following font formats:
 
-The generated font formats are woff, woff2, ttf, eot, and svg.
+* ttf
+* woff
+* woff2
+* eot
+* svg
+* otf
 
-Dependencies
-------------
+It can convert to and from any of the formats listed above, with one
+exception: it cannot convert eot to other formats.
 
-The generator leverages three third-party libraries for converting fonts.
+Third-party Tools
+-----------------
+
+The generator leverages three third-party libraries/tools for converting fonts.
+Since no single tool supports all font formats, the generator's job is to
+figure out a good chain of converters to use to convert between any two font
+formats. Under the hood, it's actually implemented as a shortest-paths problem
+on a dependency graph.
+
+The third-party tools used are:
 
 * [FontForge](http://fontforge.github.io/en-US/), a free, general-purpose, and scriptable font editor program
 * [sfntly](https://code.google.com/p/sfntly/) by Google, the open-source Java library which powers Google Fonts
 * Google's [woff2 converter](https://github.com/google/woff2)
 
-FontForge supports a good number of font formats, although it has no support
-for the eot format. The blazingly fast sfntly library covers this gap. The
-woff2 converter from Google is used to convert between the woff2 and ttf
-formats.
+FontForge supports reading and generating a good number of font formats,
+although it has no support for the eot or woff2 formats. The blazingly fast
+sfntly library can convert ttf fonts to eot or woff, covering one of these
+gaps. The woff2 converter from Google is also used to convert between the
+woff2 and ttf formats.
 
 Running `./setup` will check out the sfntly and woff2 converter repositories
 locally where `generate-webfonts` can find them. Install FontForge using your
