@@ -54,6 +54,15 @@ The file `MyFont.css` will contain the following:
 }
 ```
 
+If you need to combine the css files you could always concatenate the output files or append them to your main css file:
+
+```shell
+cat assets/*.css >> build/main.css
+```
+If you need need transform a folder with some fonts and combine the css files you need run:
+```shell
+find your-font-dir/ -name '*.otf' -exec ./bin/generate-webfonts -o assets/ --css - '{}' ';' > main.css
+```
 Conceptually, given a list of input files and a list of output formats, the
 converter will attempt to satisfy all output format requirements by copying
 matching input files and converting files to fill in the gaps. Because of
