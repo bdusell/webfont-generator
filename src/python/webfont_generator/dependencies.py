@@ -1,7 +1,7 @@
 import operator
 
-import graph
-from operations import (copy_file, convert_with_fontforge, convert_with_sfntly,
+from . import graph
+from .operations import (copy_file, convert_with_fontforge, convert_with_sfntly,
     convert_with_woff2_compress, convert_with_woff2_decompress)
 
 FORMATS = ['ttf', 'otf', 'svg', 'eot', 'woff', 'woff2']

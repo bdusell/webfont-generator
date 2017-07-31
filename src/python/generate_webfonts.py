@@ -5,11 +5,11 @@ import os
 import os.path
 import logging
 
-from util import remove_suffix
-from error import Error
-from operations import FontFile
-from dependencies import FORMATS_SET, convert_files
-from css import generate_css
+from webfont_generator.util import remove_suffix
+from webfont_generator.error import Error
+from webfont_generator.operations import FontFile
+from webfont_generator.dependencies import FORMATS_SET, convert_files
+from webfont_generator.css import generate_css
 
 VERSION = '1.3.0-dev'
 

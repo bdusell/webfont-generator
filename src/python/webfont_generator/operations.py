@@ -3,12 +3,12 @@ import errno
 import shutil
 import subprocess
 
-from util import indent
-from error import Error
+from .util import indent
+from .error import Error
 
 _d = os.path.dirname
 
-BASE_DIR = _d(_d(_d(os.path.realpath(__file__))))
+BASE_DIR = _d(_d(_d(_d(os.path.realpath(__file__)))))
 VENDOR_DIR = os.path.join(BASE_DIR, 'vendor')
 
 class FontFile(object):
@@ -65,7 +65,7 @@ def _ff_escape(s):
 
 def convert_with_fontforge(input_files, output_files, logger):
     for input_file in input_files:
-        input_path = input_file.path
+        input_path = input_file.full_path
         output_paths = [f.full_path for f in output_files]
         logger.info('using FontForge to convert %s to %s' % (input_path, ', '.join(output_paths)))
         _convert_with_fontforge(input_path, output_paths)
