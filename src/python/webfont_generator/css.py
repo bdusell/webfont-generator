@@ -64,7 +64,7 @@ def generate_css(out, formats, output_files, prefix, font_family):
     except ValueError:
         first = True
     else:
-        eot_url = _file_url(prefix, font_files['eot'])
+        eot_url = _file_url(prefix, output_files['eot'])
         out.write('url(')
         out.write(eot_url)
         out.write(''');
