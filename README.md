@@ -149,8 +149,10 @@ on a dependency graph.
 
 The third-party tools used are:
 
-* [FontForge](http://fontforge.github.io/en-US/), a free, general-purpose, and scriptable font editor program
-* [sfntly](https://code.google.com/p/sfntly/) by Google, the open-source Java library which powers Google Fonts
+* [FontForge](http://fontforge.github.io/en-US/), a free, general-purpose, and
+  scriptable font editor program
+* [sfntly](https://code.google.com/p/sfntly/) by Google, an open-source Java
+  library which once powered Google Fonts
 * Google's [woff2 converter](https://github.com/google/woff2)
 
 FontForge supports reading and generating a good number of font formats,
@@ -159,22 +161,24 @@ sfntly library can convert ttf fonts to eot or woff, covering one of these
 gaps. The woff2 converter from Google is also used to convert between the
 woff2 and ttf formats.
 
-Running `./setup` will check out the sfntly and woff2 converter repositories
-locally where `generate-webfonts` can find them. Install FontForge using your
-package manager or directly from their
-[website](http://fontforge.github.io/en-US/).
-
-Other commands required to use this tool and its setup script are: `python`,
-`java`, `javac`, `ant`, `git`.
-
 Setup
 -----
 
 As mentioned above, run `./setup` to download and build the third-party
-libraries.
+libraries. Running `./setup` will check out the sfntly and woff2 converter
+repositories locally where `generate-webfonts` can find them. Install
+FontForge using your package manager or directly from their
+[website](http://fontforge.github.io/en-US/).
 
 The setup process assumes a \*nix environment. There is currently no support
 for setting up this tool on Windows.
+
+The following commands are required to run the setup script:
+* `git`
+* `java` and `javac`
+* `mvn` (Maven)
+
+The `generate-webfonts` script itself requires Python 3.
 
 Closing Thoughts
 ----------------
