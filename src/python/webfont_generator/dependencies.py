@@ -3,6 +3,7 @@ import operator
 from . import graph
 from .operations import (copy_file, convert_with_fontforge, convert_with_sfntly,
     convert_with_woff2_compress, convert_with_woff2_decompress)
+from .error import Error
 
 FORMATS = ['ttf', 'otf', 'svg', 'eot', 'woff', 'woff2']
 FORMATS_SET = set(FORMATS)
@@ -141,8 +142,12 @@ def convert_files(input_files, output_dir, output_formats, logger):
     # Raise an error if any of the output formats cannot be generated
     unreachable_vertices = set(destination_vertices) - reachable_vertices
     if unreachable_vertices:
+        unreachable_files = sorted({
+            e.file.full_path
+            for v in unreachable_vertices
+            for e in v.outgoing_edges })
         raise Error('unable to generate the following files: %s' % ' '.join(
-            v.file.full_path for v in unreachable_vertices))
+            unreachable_files))
     # Follow the shortest-paths backpointers and construct a dependency sub-tree
     dependency_tree = graph.construct_shortest_paths_subtree(
         source_vertex, destination_vertices)
