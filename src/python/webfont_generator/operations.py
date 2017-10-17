@@ -84,7 +84,7 @@ def _convert_with_fontforge(input_path, output_paths):
         err = p.stderr.read()
         p.stderr.close()
         if p.wait() != 0:
-            raise Error('FontForge conversion failed:\n\n' + indent(err, '  '))
+            raise Error('FontForge conversion failed:\n\n' + indent(err.decode('ascii'), '  '))
 
 def convert_with_sfntly(input_files, output_files, logger):
     for input_file in input_files:
@@ -95,7 +95,7 @@ def convert_with_sfntly(input_files, output_files, logger):
 
 SFNTLY_CLASSPATH = ':'.join([
     os.path.join(BASE_DIR, 'src', 'java'),
-    os.path.join(VENDOR_DIR, 'sfntly', 'java', 'build', 'classes')
+    os.path.join(VENDOR_DIR, 'sfntly', 'java', 'target', 'classes')
 ])
 
 def _convert_with_sfntly(input_path, output_paths):

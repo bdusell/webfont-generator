@@ -9,6 +9,8 @@ SFNTLY_DIR="$VENDOR_DIR"/sfntly
 WOFF2_DIR="$VENDOR_DIR"/woff2
 JAVA_DIR="$BASE_DIR"/src/java
 
+SFNTLY_COMMIT=0e3a4a3c8e1623749a7d90cbfa5d431ac15c44ef
+
 print_ansi_code() {
   printf '\033[%sm' "$1"
 }
@@ -49,13 +51,20 @@ require_command() {
 fetch_sfntly() {
   if [[ ! -d $SFNTLY_DIR ]]; then
     log 'Fetching sfntly...'
-    git clone https://github.com/googlei18n/sfntly.git "$SFNTLY_DIR"
+    git clone https://github.com/rillig/sfntly.git "$SFNTLY_DIR" &&
+    (
+      cd "$SFNTLY_DIR" &&
+      git checkout -q "$SFNTLY_COMMIT"
+    )
   fi
 }
 
 build_sfntly() {
   log 'Building sfntly...'
-  (cd "$SFNTLY_DIR"/java && ant)
+  (
+    cd "$SFNTLY_DIR"/java &&
+    mvn compile
+  )
 }
 
 fetch_woff2() {
@@ -79,7 +88,7 @@ main() {
   require_command 'git' &&
   require_command 'java' &&
   require_command 'javac' &&
-  require_command 'ant' &&
+  require_command 'mvn' &&
   require_command 'python' &&
   require_command 'make' &&
   require_command 'fontforge' 'FontForge' &&
