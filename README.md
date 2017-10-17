@@ -173,6 +173,9 @@ Setup
 As mentioned above, run `./setup` to download and build the third-party
 libraries.
 
+The setup process assumes a \*nix environment. There is currently no support
+for setting up this tool on Windows.
+
 Closing Thoughts
 ----------------
 
