@@ -9,7 +9,8 @@ SFNTLY_DIR="$VENDOR_DIR"/sfntly
 WOFF2_DIR="$VENDOR_DIR"/woff2
 JAVA_DIR="$BASE_DIR"/src/java
 
-SFNTLY_COMMIT=0e3a4a3c8e1623749a7d90cbfa5d431ac15c44ef
+SFNTLY_COMMIT='0e3a4a3c8e1623749a7d90cbfa5d431ac15c44ef'
+WOFF2_COMMIT='5bbcf1f8ad44c07e797a088fec1dd2317611089a'
 
 print_ansi_code() {
   printf '\033[%sm' "$1"
@@ -70,13 +71,17 @@ build_sfntly() {
 fetch_woff2() {
   if [[ ! -d $WOFF2_DIR ]]; then
     log 'Fetching woff2...'
-    git clone --recursive http://github.com/google/woff2.git "$WOFF2_DIR"
+    git clone --recursive http://github.com/google/woff2.git "$WOFF2_DIR" &&
+    (
+      cd "$WOFF2_DIR" &&
+      git checkout -q "$WOFF2_COMMIT"
+    )
   fi
 }
 
 build_woff2() {
   log 'Building woff2...'
-  make -C "$WOFF2_DIR" all
+  make -C "$WOFF2_DIR"
 }
 
 build_java() {
