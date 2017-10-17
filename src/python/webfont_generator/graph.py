@@ -83,7 +83,7 @@ def compute_shortest_paths(source_vertex, destination_vertices, zero=0):
     """An implementation of Dijkstra's algorithm with time complexity
     O(V^2 + E).
     
-    After this precedure finishes, the vertices of the graph will have their
+    After this procedure finishes, the vertices of the graph will have their
     shortest path metadata filled in. Note that the resulting sub-graph of
     shortest paths will always be a tree."""
     source_vertex.length = zero
