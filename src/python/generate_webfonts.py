@@ -113,8 +113,7 @@ def main():
     else:
         output_formats = output_formats_str.split(',')
         # Check if any formats are suffixed with `:inline`
-        parsed_output_formats = list(map(
-            lambda f: remove_suffix(f, ':inline'), output_formats))
+        parsed_output_formats = [remove_suffix(f, ':inline') for f in output_formats]
         # Check for unrecognized formats
         unrecognized_formats = set(f for f, inline in parsed_output_formats) - FORMATS_SET
         if unrecognized_formats:
@@ -142,20 +141,24 @@ def main():
         logger.setLevel(logging.INFO)
     else:
         logger.setLevel(logging.WARNING)
-    # Generate files for all requested output formats, even the inline
-    # ones, since inlining requires the contents of the output files
-    # anyway
-    output_formats = { f for f, inline in parsed_output_formats }
+    # Generate files for all requested output formats
+    # Include the inline font formats that are not already included in the
+    # input files, since inlining requires the contents of those files
+    css_inline_files_dict = { f.format : f for f in input_files }
+    output_formats = {
+        f for f, inline in parsed_output_formats
+        if (not inline) or (inline and f not in css_inline_files_dict) }
     try:
-        output_files = convert_files(input_files, output_dir, output_formats, logger)
+        output_files_dict = convert_files(input_files, output_dir, output_formats, logger)
         if do_generate_css:
+            css_inline_files_dict.update(output_files_dict)
             if css_file_name == '-':
                 css_fout = sys.stdout
             else:
                 css_fout = open(css_file_name, 'w')
             with css_fout:
-                generate_css(css_fout, parsed_output_formats, output_files,
-                    prefix_str, font_family)
+                generate_css(css_fout, parsed_output_formats,
+                    css_inline_files_dict, prefix_str, font_family)
     except Error as e:
         print(e, file=sys.stderr)
         sys.exit(1)
