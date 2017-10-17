@@ -1,4 +1,5 @@
 import operator
+import collections
 
 from . import graph
 from .operations import (copy_file, convert_with_fontforge, convert_with_sfntly,
@@ -30,7 +31,9 @@ class TreeVertex(graph.Vertex):
 
     def __init__(self, operation):
         super().__init__(operation)
-        self._incoming_edges = {}
+        # Use an ordered dict so that the order in which the edges are
+        # traversed is deterministic
+        self._incoming_edges = collections.OrderedDict()
 
     def add_edge_object(self, edge):
         super().add_edge_object(edge)
@@ -72,9 +75,10 @@ def construct_dependency_graph(input_files, output_files):
     input_vertices = { f : Vertex(noop) for f in FORMATS }
     # For every input file, connect the super-source to the appropriate input
     # vertex
-    for input_file in input_files.values():
-        source_vertex.add_edge(
-            input_vertices[input_file.format], Vector(0, 0, 0), None)
+    # Sort the input file formats first so that their order is deterministic
+    input_file_formats = sorted(input_files.keys())
+    for f in input_file_formats:
+        source_vertex.add_edge(input_vertices[f], Vector(0, 0, 0), None)
     # Create a vertex for every possible output
     output_vertices = { f : Vertex(noop) for f in FORMATS }
     # For every format, allow an output file to be copied from an input file
@@ -130,7 +134,8 @@ def convert_files(input_files, output_dir, output_formats, logger):
     output_files_dict = {
         f : input_files[0].moved_and_converted_to(output_dir, f)
         for f in FORMATS }
-    output_formats = list(output_formats)
+    # Sort the output formats so that their order is deterministic
+    output_formats = sorted(output_formats)
     # Construct the conversion dependency graph
     source_vertex, output_vertices = construct_dependency_graph(
         input_files_dict, output_files_dict)

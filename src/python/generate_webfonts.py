@@ -145,7 +145,7 @@ def main():
     # Generate files for all requested output formats, even the inline
     # ones, since inlining requires the contents of the output files
     # anyway
-    output_formats = set(f for f, inline in parsed_output_formats)
+    output_formats = { f for f, inline in parsed_output_formats }
     try:
         output_files = convert_files(input_files, output_dir, output_formats, logger)
         if do_generate_css:

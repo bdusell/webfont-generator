@@ -1,9 +1,13 @@
+import collections
+
 class Vertex:
     """A generic graph vertex with an adjacency list."""
 
     def __init__(self, value):
         self.value = value
-        self._edges = {}
+        # Use an ordered dict so that the order in which the edges are
+        # traversed is deterministic
+        self._edges = collections.OrderedDict()
 
     def add_edge(self, vertex_to):
         self.add_edge_object(self.Edge(self, vertex_to))
