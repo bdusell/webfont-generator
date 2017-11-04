@@ -8,14 +8,16 @@ import logging
 from webfont_generator.util import remove_suffix
 from webfont_generator.error import Error
 from webfont_generator.operations import FontFile
-from webfont_generator.dependencies import FORMATS_SET, convert_files
+from webfont_generator.dependencies import (
+    FORMATS_SET, convert_files, construct_dependency_graph)
+from webfont_generator.graph import depth_first_traversal
 from webfont_generator.css import generate_css
 
 VERSION = '1.3.0-dev'
 
 def usage(out):
     out.write('''\
-Usage: generate-webfonts [options] <input-file> ...
+Usage: generate-webfonts [options] <input-file> -o <output-dir> ...
 
   Convert font files to web-friendly font formats.
 
@@ -27,11 +29,13 @@ Arguments:
                 satisfy the output format requirements by copying matching
                 input files and converting files to fill in the gaps.
 
-Options:
+Required Flags:
   -o --output <dir>
                 Destination directory for converted files. Even if only inline
                 fonts are generated, a destination directory is needed to hold
                 intermediate files.
+
+Options:
   -f --format <formats>
                 Comma-separated list of output formats.
                 Possible formats are:
@@ -50,9 +54,23 @@ Options:
                 Name of the font family used in the CSS file. Default is the
                 base name of the first input file.
   --verbose     Show verbose output while running.
+  --dot         Rather than converting files, print dot code for the converter
+                dependency graph.
   --version     Display version.
   -h --help     Show this help message.
 ''')
+
+def print_dot_code(root_vertex, out):
+    print('digraph {', file=out)
+    for vertex in depth_first_traversal(root_vertex):
+        vertex_label = vertex.value.__name__
+        print('\tv%s [label="%s"];' % (id(vertex), vertex_label), file=out)
+        for edge in vertex.outgoing_edges:
+            print('\tv%s -> v%s' % (id(vertex), id(edge.vertex_to)), end='', file=out)
+            if edge.file is not None:
+                print(' [label="%s"]' % edge.file.full_path, end='', file=out)
+            print(';', file=out)
+    print('}', file=out)
 
 def main():
     # Parse command line arguments
@@ -63,6 +81,7 @@ def main():
     prefix_str = None
     font_family = None
     be_verbose = False
+    print_dot = False
     args = sys.argv[:0:-1]
     while args:
         arg = args.pop()
@@ -78,6 +97,8 @@ def main():
             font_family = args.pop()
         elif arg == '--verbose':
             be_verbose = True
+        elif arg == '--dot':
+            print_dot = True
         elif arg == '-v' or arg == '--version':
             sys.stdout.write(VERSION + '\n')
             sys.exit(0)
@@ -141,27 +162,35 @@ def main():
         logger.setLevel(logging.INFO)
     else:
         logger.setLevel(logging.WARNING)
-    # Generate files for all requested output formats
+    # Figure out which files to generate
     # Include the inline font formats that are not already included in the
     # input files, since inlining requires the contents of those files
     css_inline_files_dict = { f.format : f for f in input_files }
     output_formats = {
         f for f, inline in parsed_output_formats
         if (not inline) or (inline and f not in css_inline_files_dict) }
-    try:
-        output_files_dict = convert_files(input_files, output_dir, output_formats, logger)
-        if do_generate_css:
-            css_inline_files_dict.update(output_files_dict)
-            if css_file_name == '-':
-                css_fout = sys.stdout
-            else:
-                css_fout = open(css_file_name, 'w')
-            with css_fout:
-                generate_css(css_fout, parsed_output_formats,
-                    css_inline_files_dict, prefix_str, font_family)
-    except Error as e:
-        print(e, file=sys.stderr)
-        sys.exit(1)
+    if print_dot:
+        # If given --dot, do not convert the files, just print the dot code
+        # for the dependency graph
+        source_vertex, output_vertices = construct_dependency_graph(
+            input_files, output_dir)
+        print_dot_code(source_vertex, sys.stdout)
+    else:
+        # Actually convert font files and generate CSS
+        try:
+            output_files_dict = convert_files(input_files, output_dir, output_formats, logger)
+            if do_generate_css:
+                css_inline_files_dict.update(output_files_dict)
+                if css_file_name == '-':
+                    css_fout = sys.stdout
+                else:
+                    css_fout = open(css_file_name, 'w')
+                with css_fout:
+                    generate_css(css_fout, parsed_output_formats,
+                        css_inline_files_dict, prefix_str, font_family)
+        except Error as e:
+            print(e, file=sys.stderr)
+            sys.exit(1)
 
 if __name__ == '__main__':
     main()

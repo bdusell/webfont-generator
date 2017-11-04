@@ -145,3 +145,15 @@ def preorder_traversal(root_vertex):
     for edge in root_vertex.outgoing_edges:
         for vertex in preorder_traversal(edge.vertex_to):
             yield vertex
+
+def depth_first_traversal(root_vertex):
+    """Do a depth-first traversal of the vertices in a graph."""
+    queued = { root_vertex }
+    agenda = [root_vertex]
+    while agenda:
+        vertex = agenda.pop()
+        yield vertex
+        for edge in vertex.outgoing_edges:
+            if edge.vertex_to not in queued:
+                queued.add(edge.vertex_to)
+                agenda.append(edge.vertex_to)

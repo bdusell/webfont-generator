@@ -66,9 +66,15 @@ Vertex = ShortestPathsVertex
 def noop(input_files, output_files, logger):
     pass
 
-def construct_dependency_graph(input_files, output_files):
+def construct_dependency_graph(input_files, output_dir):
     """Construct the dependency graph which describes which programs can be
     used to convert which files."""
+    # Use the first input file to determine the names for the output files
+    input_files = list(input_files)
+    input_files_dict = { f.format : f for f in input_files }
+    output_files_dict = {
+        f : input_files[0].moved_and_converted_to(output_dir, f)
+        for f in FORMATS }
     # Create a super-source vertex
     source_vertex = Vertex(noop)
     # Create a vertex for every possible input format
@@ -76,7 +82,7 @@ def construct_dependency_graph(input_files, output_files):
     # For every input file, connect the super-source to the appropriate input
     # vertex
     # Sort the input file formats first so that their order is deterministic
-    input_file_formats = sorted(input_files.keys())
+    input_file_formats = sorted(input_files_dict.keys())
     for f in input_file_formats:
         source_vertex.add_edge(input_vertices[f], Vector(0, 0, 0), None)
     # Create a vertex for every possible output
@@ -85,60 +91,54 @@ def construct_dependency_graph(input_files, output_files):
     # in the same format
     for f in FORMATS:
         copy_vertex = Vertex(copy_file)
-        if f in input_files:
+        if f in input_files_dict:
             input_vertices[f].add_edge(
-                copy_vertex, Vector(0, 0, 0), input_files[f])
+                copy_vertex, Vector(0, 0, 0), input_files_dict[f])
         copy_vertex.add_edge(
-            output_vertices[f], Vector(0, 0, 1), output_files[f])
+            output_vertices[f], Vector(0, 0, 1), output_files_dict[f])
     # FontForge can convert any one of ttf, otf, woff, svg to any of ttf, svg
     fontforge_vertex = Vertex(convert_with_fontforge)
     for f in ('ttf', 'otf', 'woff', 'svg'):
-        if f in input_files:
+        if f in input_files_dict:
             input_vertices[f].add_edge(
-                fontforge_vertex, Vector(0, 0, 0), input_files[f])
+                fontforge_vertex, Vector(0, 0, 0), input_files_dict[f])
         output_vertices[f].add_edge(
-            fontforge_vertex, Vector(0, 0, 0), output_files[f])
+            fontforge_vertex, Vector(0, 0, 0), output_files_dict[f])
     for f in ('ttf', 'svg'):
         fontforge_vertex.add_edge(
-            output_vertices[f], Vector(1, 0, 0), output_files[f])
+            output_vertices[f], Vector(1, 0, 0), output_files_dict[f])
     # sfntly can convert ttf to any of woff, eot
     sfntly_vertex = Vertex(convert_with_sfntly)
-    if 'ttf' in input_files:
+    if 'ttf' in input_files_dict:
         input_vertices['ttf'].add_edge(
-            sfntly_vertex, Vector(0, 0, 0), input_files['ttf'])
+            sfntly_vertex, Vector(0, 0, 0), input_files_dict['ttf'])
     output_vertices['ttf'].add_edge(
-        sfntly_vertex, Vector(0, 0, 0), output_files[f])
+        sfntly_vertex, Vector(0, 0, 0), output_files_dict[f])
     for f in ('woff', 'eot'):
         sfntly_vertex.add_edge(
-            output_vertices[f], Vector(0, 1, 0), output_files[f])
+            output_vertices[f], Vector(0, 1, 0), output_files_dict[f])
     # woff2_compress can convert ttf to woff2
     # Note that it requires the input file to be in the destination directory
     woff2_compress_vertex = Vertex(convert_with_woff2_compress)
     output_vertices['ttf'].add_edge(
-        woff2_compress_vertex, Vector(0, 0, 0), output_files['ttf'])
+        woff2_compress_vertex, Vector(0, 0, 0), output_files_dict['ttf'])
     woff2_compress_vertex.add_edge(
-        output_vertices['woff2'], Vector(0, 1, 0), output_files['woff2'])
+        output_vertices['woff2'], Vector(0, 1, 0), output_files_dict['woff2'])
     # woff2_decompress can convert woff2 to ttf
     woff2_decompress_vertex = Vertex(convert_with_woff2_decompress)
     output_vertices['woff2'].add_edge(
-        woff2_decompress_vertex, Vector(0, 0, 0), output_files['woff2'])
+        woff2_decompress_vertex, Vector(0, 0, 0), output_files_dict['woff2'])
     woff2_decompress_vertex.add_edge(
-        output_vertices['ttf'], Vector(0, 1, 0), output_files['ttf'])
+        output_vertices['ttf'], Vector(0, 1, 0), output_files_dict['ttf'])
     # Return the super-source and output vertices
     return source_vertex, output_vertices
 
 def convert_files(input_files, output_dir, output_formats, logger):
-    # Use the first input file to determine the names for the output files
-    input_files = list(input_files)
-    input_files_dict = { f.format : f for f in input_files }
-    output_files_dict = {
-        f : input_files[0].moved_and_converted_to(output_dir, f)
-        for f in FORMATS }
-    # Sort the output formats so that their order is deterministic
-    output_formats = sorted(output_formats)
     # Construct the conversion dependency graph
     source_vertex, output_vertices = construct_dependency_graph(
-        input_files_dict, output_files_dict)
+        input_files, output_dir)
+    # Sort the output formats so that their order is deterministic
+    output_formats = sorted(output_formats)
     destination_vertices = [output_vertices[f] for f in output_formats]
     # Compute the shortest paths from the super-source vertex to the vertices
     # corresponding to each of the requested output formats
