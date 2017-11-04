@@ -66,15 +66,18 @@ Vertex = ShortestPathsVertex
 def noop(input_files, output_files, logger):
     pass
 
-def construct_dependency_graph(input_files, output_dir):
-    """Construct the dependency graph which describes which programs can be
-    used to convert which files."""
+def make_file_dicts(input_files, output_dir):
     # Use the first input file to determine the names for the output files
     input_files = list(input_files)
     input_files_dict = { f.format : f for f in input_files }
     output_files_dict = {
         f : input_files[0].moved_and_converted_to(output_dir, f)
         for f in FORMATS }
+    return input_files_dict, output_files_dict
+
+def construct_dependency_graph(input_files_dict, output_files_dict):
+    """Construct the dependency graph which describes which programs can be
+    used to convert which files."""
     # Create a super-source vertex
     source_vertex = Vertex(noop)
     # Create a vertex for every possible input format
@@ -113,7 +116,7 @@ def construct_dependency_graph(input_files, output_dir):
         input_vertices['ttf'].add_edge(
             sfntly_vertex, Vector(0, 0, 0), input_files_dict['ttf'])
     output_vertices['ttf'].add_edge(
-        sfntly_vertex, Vector(0, 0, 0), output_files_dict[f])
+        sfntly_vertex, Vector(0, 0, 0), output_files_dict['ttf'])
     for f in ('woff', 'eot'):
         sfntly_vertex.add_edge(
             output_vertices[f], Vector(0, 1, 0), output_files_dict[f])
@@ -135,8 +138,10 @@ def construct_dependency_graph(input_files, output_dir):
 
 def convert_files(input_files, output_dir, output_formats, logger):
     # Construct the conversion dependency graph
-    source_vertex, output_vertices = construct_dependency_graph(
+    input_files_dict, output_files_dict = make_file_dicts(
         input_files, output_dir)
+    source_vertex, output_vertices = construct_dependency_graph(
+        input_files_dict, output_files_dict)
     # Sort the output formats so that their order is deterministic
     output_formats = sorted(output_formats)
     destination_vertices = [output_vertices[f] for f in output_formats]

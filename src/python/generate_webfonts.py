@@ -9,7 +9,7 @@ from webfont_generator.util import remove_suffix
 from webfont_generator.error import Error
 from webfont_generator.operations import FontFile
 from webfont_generator.dependencies import (
-    FORMATS_SET, convert_files, construct_dependency_graph)
+    FORMATS_SET, convert_files, construct_dependency_graph, make_file_dicts)
 from webfont_generator.graph import depth_first_traversal
 from webfont_generator.css import generate_css
 
@@ -172,8 +172,10 @@ def main():
     if print_dot:
         # If given --dot, do not convert the files, just print the dot code
         # for the dependency graph
-        source_vertex, output_vertices = construct_dependency_graph(
+        input_files_dict, output_files_dict = make_file_dicts(
             input_files, output_dir)
+        source_vertex, output_vertices = construct_dependency_graph(
+            input_files_dict, output_files_dict)
         print_dot_code(source_vertex, sys.stdout)
     else:
         # Actually convert font files and generate CSS
