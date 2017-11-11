@@ -99,7 +99,8 @@ def construct_dependency_graph(input_files_dict, output_files_dict):
                 copy_vertex, Vector(0, 0, 0), input_files_dict[f])
         copy_vertex.add_edge(
             output_vertices[f], Vector(0, 0, 1), output_files_dict[f])
-    # FontForge can convert any one of ttf, otf, woff, svg to any of ttf, svg
+    # FontForge can convert any one of ttf, otf, woff, svg to any of ttf, otf,
+    # svg
     fontforge_vertex = Vertex(convert_with_fontforge)
     for f in ('ttf', 'otf', 'woff', 'svg'):
         if f in input_files_dict:
@@ -107,7 +108,7 @@ def construct_dependency_graph(input_files_dict, output_files_dict):
                 fontforge_vertex, Vector(0, 0, 0), input_files_dict[f])
         output_vertices[f].add_edge(
             fontforge_vertex, Vector(0, 0, 0), output_files_dict[f])
-    for f in ('ttf', 'svg'):
+    for f in ('ttf', 'otf', 'svg'):
         fontforge_vertex.add_edge(
             output_vertices[f], Vector(1, 0, 0), output_files_dict[f])
     # sfntly can convert ttf to any of woff, eot
