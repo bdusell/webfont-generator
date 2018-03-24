@@ -84,7 +84,20 @@ def _convert_with_fontforge(input_path, output_paths):
         err = p.stderr.read()
         p.stderr.close()
         if p.wait() != 0:
-            raise Error('FontForge conversion failed:\n\n' + indent(err.decode('ascii'), '  '))
+            raise Error(
+                'FontForge conversion failed:\n'
+                'Output from FontForge:\n' +
+                indent(err.decode('ascii'), '  '))
+    # Ensure that the files were actually generated
+    bad_files = [p for p in output_paths if not os.path.isfile(p)]
+    if bad_files:
+        raise Error(
+            'FontForge failed to generate %s:\n'
+            'Output from FontForge:\n'
+            '%s' % (
+                ', '.join(bad_files),
+                indent(err.decode('ascii'), '  ')
+            ))
 
 def convert_with_sfntly(input_files, output_files, logger):
     for input_file in input_files:
