@@ -13,7 +13,7 @@ from webfont_generator.dependencies import (
 from webfont_generator.graph import depth_first_traversal
 from webfont_generator.css import generate_css
 
-VERSION = '1.3.0-dev'
+VERSION = '1.3.0'
 
 def usage(out):
     out.write('''\
