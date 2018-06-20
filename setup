@@ -94,7 +94,7 @@ main() {
   require_command 'java' &&
   require_command 'javac' &&
   require_command 'mvn' &&
-  require_command 'python' &&
+  require_command 'python3' &&
   require_command 'make' &&
   require_command 'fontforge' 'FontForge' &&
   mkdir -p "$VENDOR_DIR" &&
