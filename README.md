@@ -119,7 +119,7 @@ base name of the first input file.
 
 Show verbose output while running.
 
-### `--version`
+### `-v --version`
 
 Display version.
 

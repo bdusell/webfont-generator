@@ -77,7 +77,10 @@ def _convert_with_fontforge(input_path, output_paths):
     with _devnull('w') as fout:
         p = subprocess.Popen(['fontforge', '-lang=ff', '-script', '-'],
             stdin=subprocess.PIPE, stdout=fout, stderr=subprocess.PIPE)
-        p.stdin.write(('Open("%s")\n' % _ff_escape(input_path)).encode('utf-8'))
+        # CIDFlatten flattens CID-based fonts (e.g. otf) with multiple
+        # sub-fonts into one single font.
+        # See https://github.com/bdusell/webfont-generator/issues/20
+        p.stdin.write(('Open("%s")\nCIDFlatten()\n' % _ff_escape(input_path)).encode('utf-8'))
         for output_path in output_paths:
             p.stdin.write(('Generate("%s")\n' % _ff_escape(output_path)).encode('utf-8'))
         p.stdin.close()
