@@ -50,7 +50,7 @@ The file `MyFont.css` will contain the following:
        url('assets/MyFont.woff2') format('woff2'),
        url('assets/MyFont.woff') format('woff'),
        url('assets/MyFont.ttf') format('truetype'),
-       url('assets/MyFont.svg#foo') format('svg');
+       url('assets/MyFont.svg#MyFont') format('svg');
 }
 ```
 
